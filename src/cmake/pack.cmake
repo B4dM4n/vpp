@@ -20,16 +20,6 @@ macro(add_vpp_packaging)
     ${ARGN}
   )
 
-  # parse /etc/os-release
-  file(READ "/etc/os-release" os_version)
-  string(REPLACE "\n" ";" os_version ${os_version})
-  foreach(_ver ${os_version})
-    string(REPLACE "=" ";" _ver ${_ver})
-    list(GET _ver 0 _name)
-    list(GET _ver 1 _value)
-    set(OS_${_name} ${_value})
-  endforeach()
-
   # extract version from git
   execute_process(
     COMMAND git describe --long --match v*
