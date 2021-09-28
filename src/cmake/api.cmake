@@ -53,6 +53,7 @@ function(vpp_generate_api_c_header file)
 endfunction()
 
 function(vpp_generate_api_json_header file dir component)
+  string(REPLACE "/" "_" target_name ${file})
   set (output_name ${CMAKE_CURRENT_BINARY_DIR}/${file}.json)
   get_filename_component(output_dir ${output_name} DIRECTORY)
   if(NOT VPP_APIGEN)
@@ -68,6 +69,10 @@ function(vpp_generate_api_json_header file dir component)
     DEPENDS ${VPP_APIGEN} ${CMAKE_CURRENT_SOURCE_DIR}/${file}
     COMMENT "Generating API header ${output_name}"
   )
+  if(NOT TARGET ${target_name}_generated)
+    add_custom_target(${target_name}_generated DEPENDS ${output_name})
+  endif()
+  add_dependencies(api_json_headers ${target_name}_generated)
   install(
     FILES ${output_name}
     DESTINATION share/vpp/api/${dir}/
@@ -96,7 +101,7 @@ function(vpp_generate_vapi_c_header f)
     WORKING_DIRECTORY ${VPP_BINARY_DIR}/vpp-api/vapi
     COMMAND ${PYENV} ${VPP_VAPI_C_GEN}
     ARGS --remove-path ${input}
-    DEPENDS ${input} ${VPP_VAPI_C_GEN_DEPENDS}
+    DEPENDS ${input} ${VPP_VAPI_C_GEN_DEPENDS} api_json_headers
     COMMENT "Generating VAPI C header ${output_name}"
   )
   install(
@@ -123,7 +128,7 @@ function (vpp_generate_vapi_cpp_header f)
     WORKING_DIRECTORY ${VPP_BINARY_DIR}/vpp-api/vapi
     COMMAND ${PYENV} ${VPP_VAPI_CPP_GEN}
     ARGS --gen-h-prefix=vapi --remove-path ${input}
-    DEPENDS ${input} ${VPP_VAPI_CPP_GEN_DEPENDS}
+    DEPENDS ${input} ${VPP_VAPI_CPP_GEN_DEPENDS} api_json_headers
     COMMENT "Generating VAPI C++ header ${output_name}"
   )
   install(
@@ -173,5 +178,7 @@ function(vpp_add_api_files name dir component)
 endfunction()
 
 add_custom_target(api_headers
-  DEPENDS vlibmemory_api_headers vnet_api_headers vpp_api_headers vlib_api_headers
+  DEPENDS vlibmemory_api_headers vnet_api_headers vpp_api_headers vlib_api_headers api_json_headers
 )
+
+add_custom_target(api_json_headers)
